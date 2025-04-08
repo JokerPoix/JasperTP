@@ -1,0 +1,39 @@
+# === Fichiers de build Maven ===
+target/                             # Dossier de sortie de build Maven (classes, JARs, etc.)
+
+# Fichiers de backup/temp de Maven (générés par certains plugins comme release ou shade)
+pom.xml.tag                         # Tags de version (Maven release plugin)
+pom.xml.releaseBackup               # Backup du POM lors d'une release Maven
+pom.xml.versionsBackup              # Backup du POM (versions Maven)
+pom.xml.next                        # POM temporaire pour la prochaine version (Maven)
+release.properties                  # Fichier de propriétés de release Maven
+dependency-reduced-pom.xml          # POM temporaire réduit (généré par le plugin shade)
+buildNumber.properties              # Informations de build (générées par certains plugins)
+
+# === Répertoires de ressources ===
+# Ignorer tous les sous-dossiers de src/main/resources (ex: inputs/, output/, outputs/)
+src/main/resources/*/
+# (Optionnel) Ignorer tous les sous-dossiers de src/test/resources si présents
+src/test/resources/*/
+
+# === Fichiers de configuration d'IDE (Eclipse, IntelliJ, VS Code) ===
+# Eclipse
+.classpath                          # Fichier de configuration du classpath Eclipse
+.project                            # Fichier de configuration du projet Eclipse
+.settings/                          # Dossier de paramètres Eclipse
+
+# IntelliJ IDEA
+.idea/                              # Dossier de configuration IntelliJ IDEA
+*.iml                               # Fichiers de module IntelliJ (.iml)
+
+# Visual Studio Code
+.vscode/                            # Dossier de configuration VS Code
+
+# (Autres IDE ou outils peuvent être ajoutés ici si nécessaire)
+
+# === Dépôt Maven local ===
+.m2/                                # Dossier du dépôt Maven local (généralement pas suivi)
+
+# === Fichiers système / temporaires ===
+.DS_Store                           # Fichier macOS (à ignorer)
+Thumbs.db                           # Fichier Windows (à ignorer)
