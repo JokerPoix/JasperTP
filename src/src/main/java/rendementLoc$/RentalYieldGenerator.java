@@ -53,14 +53,18 @@ public class RentalYieldGenerator {
         //    ((avg_loypredm2 * total_surface * 12) / total_value) * 100
         //    and round the result to 2 decimal places.
         Dataset<Row> yieldDF = joined.withColumn("rental_yield",
-                functions.round(functions.expr("((avg_loypredm2 * total_surface * 12) / total_value) * 100"), 2)
+                functions.round(functions.expr("((avg_loypredm2 * total_surface * 12) / total_value) * 100"), 2))
+                .select(
+                        deptAgg.col("DEP").alias("DEP"),
+                        deptAgg.col("année").alias("année"),
+                        functions.col("rental_yield")
         );
         // 5. Select the desired columns
-        return yieldDF.select(
-                avgLoyerDF.col("DEP"),
-                deptAgg.col("année"),
-                functions.col("rental_yield")
-        );
+        return yieldDF
+        	    .groupBy("DEP")
+        	    .pivot("année")
+        	    .agg(functions.first("rental_yield"));
+
     }
     /**
      * Computes the rental yield by city (commune) and by year.
@@ -102,15 +106,20 @@ public class RentalYieldGenerator {
         // 5. Compute the rental yield using the formula:
         //    rental_yield = ((avg_loypredm2 * total_surface * 12) / total_value) * 100, rounded to 2 decimal places.
         Dataset<Row> yieldDF = joined.withColumn("rental_yield",
-                functions.round(functions.expr("((avg_loypredm2 * total_surface * 12) / total_value) * 100"), 2)
-        );
+                functions.round(functions.expr("((avg_loypredm2 * total_surface * 12) / total_value) * 100"), 2));
         
-        // 6. Select the desired columns: LIBGEO, Code_INSEE, année, rental_yield.
-        return yieldDF.select(
-                avgCityRenamed.col("LIBGEO"),
-                avgCityRenamed.col("Code_INSEE"),
-                cityAgg.col("année"),
+        // 6. Select the correct year column to avoid ambiguity before pivoting
+        Dataset<Row> finalDF = yieldDF.select(
+                avgCityRenamed.col("LIBGEO").alias("LIBGEO"),
+                cityAgg.col("Code INSEE").alias("Code_INSEE"),
+                cityAgg.col("année").alias("année"),
                 functions.col("rental_yield")
         );
+
+        // 7. Group by city, pivot by year, and aggregate
+        return finalDF.groupBy("LIBGEO", "Code_INSEE")
+                .pivot("année")
+                .agg(functions.first("rental_yield"));
+
     }
 }

@@ -105,26 +105,28 @@ public class Main {
     DataTransformer.saveAsSingleCSV(yieldByCity, outputFolderPath, "rentalYieldByCity.csv");
 
     // ---- Partie pour insérer les CSV dans la base de données via JDBC ----
+    // Dans une BDD my sql connecté en root on peut faire ca:
+    // DROP USER IF EXISTS 'poix'@'localhost';
+	// CREATE USER 'poix'@'localhost' IDENTIFIED BY 'poix';
+	// GRANT ALL PRIVILEGES ON rendement.* TO 'poix'@'localhost';
+	// FLUSH PRIVILEGES;
 
-    // Exemple pour PostgreSQL :
-    // 1. Configurer l'URL JDBC et les propriétés de connexion
-    String jdbcUrl = "jdbc:postgresql://localhost:5432/mydatabase?currentSchema=public";
+    
+    String jdbcUrl = "jdbc:mysql://localhost:3306/rendement?useSSL=false&serverTimezone=UTC";
     java.util.Properties connectionProperties = new java.util.Properties();
     connectionProperties.put("user", "poix");
     connectionProperties.put("password", "poix");
+    connectionProperties.put("driver", "com.mysql.cj.jdbc.Driver");
 
-    // 2. Charger le CSV généré pour le rendement par département et l'écrire dans la base
     Dataset<Row> rentalYieldByDeptDF = spark.read()
             .option("header", "true")
             .option("delimiter", ";")
             .csv(outputFolderPath + "/rentalYieldByDept.csv");
 
     rentalYieldByDeptDF.write()
-		    .mode(SaveMode.Overwrite)
-		    .jdbc(jdbcUrl, "rental_yield_by_department", connectionProperties);
-    System.out.println("✅ rentalYieldByDept inséré dans la base de données.");
+            .mode(SaveMode.Overwrite)
+            .jdbc(jdbcUrl, "rental_yield_by_department", connectionProperties);
 
-    // 3. Charger le CSV généré pour le rendement par ville et l'écrire dans la base
     Dataset<Row> rentalYieldByCityDF = spark.read()
             .option("header", "true")
             .option("delimiter", ";")
@@ -133,6 +135,7 @@ public class Main {
     rentalYieldByCityDF.write()
             .mode(SaveMode.Overwrite)
             .jdbc(jdbcUrl, "rental_yield_by_city", connectionProperties);
+
     System.out.println("✅ rentalYieldByCity inséré dans la base de données.");
 
     spark.stop();
