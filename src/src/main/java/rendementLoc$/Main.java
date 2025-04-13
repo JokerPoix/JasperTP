@@ -1,6 +1,9 @@
 package rendementLoc$;
 
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.DataFrameReader;
+import org.apache.spark.sql.DataFrameWriter;
+import org.apache.spark.sql.functions;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SaveMode;
@@ -27,6 +30,12 @@ public class Main {
     String inputValeursFoncieresPath = "src/main/resources/inputs/ValeursFoncieres";
     String outputFolderPath = "src/main/resources/outputs";
     String csvCodePostalInseeReferences = inputFolderPath + "/correspondanceCodeInseeCodePostal.csv";;
+    String updatedCsvPath = inputFolderPath + "/correspondanceCodeInseeCodePostal_REGION76.csv";
+    String educationLevel = inputFolderPath + "/NiveauEducationDepartement/NiveauEducationDepartement2021.xlsx";
+    String chomage2022To2024Department = inputFolderPath + "/TauxChomageAnnéesDépartement/Chomage2022A2024Département.xlsx";
+
+    // Met à jour la colonne et sauvegarde dans un autre fichier
+    UpdateCodeRegion.update(spark, csvCodePostalInseeReferences, updatedCsvPath);
 
         
     // 🔄 Fusion des fichiers EstimationLoyer (si non déjà généré)
@@ -48,8 +57,8 @@ public class Main {
     // Charger le fichier estimationLoyer.csv
     Dataset<Row> data = spark.read().option("header", "true").option("delimiter", ";").csv(outputFolderPath + "/estimationLoyer.csv");
 
-    // Filtrer les lignes correspondant à la région (par exemple, Occitanie)
-    String regionCode = "76";  // Mettez ici le code de la région désirée
+    // Filtrer les lignes correspondant à la région 
+    String regionCode = "76";  
     Dataset<Row> filteredData = DataCleaner.filterRegion(data, regionCode);
 
     // Sauvegarder les données filtrées dans un CSV unique (optionnel)
@@ -65,7 +74,7 @@ public class Main {
     DataTransformer.addYearColumnAndSave(aggregatedDF, outputFolderPath, "valeursFoncieresCleanedWithYearSurfacesINSEEAndSums.csv");
     System.out.println("✅ Les traitements sur les estimations loyers(filtrage et agrégations) ont été réalisés pour la région " + regionCode + ".");
   
-    //Calcul du rendement locatif par département --
+    //Calcul du rendement locatif par département :
 
     // 1) Charger le CSV "valeursFoncieresCleanedWithYearSurfacesINSEEAndSums.csv"
     //    qui contient DEP, année, surface_reelle_bati_somme, valeur_fonciere_somme, etc.
@@ -138,6 +147,34 @@ public class Main {
 
     System.out.println("✅ rentalYieldByCity inséré dans la base de données.");
 
+    // ==================== INSERTION DE educationLevel ====================
+    Dataset<Row> educationDF = spark.read()
+            .format("com.crealytics.spark.excel") // Assure-toi d'avoir le bon package
+            .option("dataAddress", "'Feuille1'!A1")
+            .option("header", "true")
+            .option("inferSchema", "true")
+            .load(educationLevel);
+
+    educationDF.write()
+            .mode(SaveMode.Overwrite)
+            .jdbc(jdbcUrl, "education_level", connectionProperties);
+
+    System.out.println("✅ educationLevel inséré dans la base de données.");
+
+    // ==================== INSERTION DE chomage2022To2024Department ====================
+    Dataset<Row> chomageDF = spark.read()
+            .format("com.crealytics.spark.excel")
+            .option("dataAddress", "'Feuille1'!A1")
+            .option("header", "true")
+            .option("inferSchema", "true")
+            .load(chomage2022To2024Department);
+
+    chomageDF.write()
+            .mode(SaveMode.Overwrite)
+            .jdbc(jdbcUrl, "chomage_by_department", connectionProperties);
+
+    System.out.println("✅ chomageByDepartment inséré dans la base de données.");
+    
     spark.stop();
 	}
 }

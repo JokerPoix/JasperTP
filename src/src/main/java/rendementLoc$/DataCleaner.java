@@ -64,7 +64,7 @@ public class DataCleaner {
         // 2) Charger le CSV des correspondances
         Dataset<Row> regionDF = spark.read()
             .option("header", "true")
-            .option("delimiter", ";")
+            .option("delimiter", "\t")
             .csv(regionFilePath);
         
         // 3) Filtrer le CSV des correspondances pour ne garder que celles des régions désirées.

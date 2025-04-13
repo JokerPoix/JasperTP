@@ -108,6 +108,26 @@ public class RentalYieldGenerator {
         Dataset<Row> yieldDF = joined.withColumn("rental_yield",
                 functions.round(functions.expr("((avg_loypredm2 * total_surface * 12) / total_value) * 100"), 2));
         
+        // Nettoyage des caractères non imprimables dans LIBGEO
+        Dataset<Row> cleanedDF = yieldDF.withColumn("LIBGEO",
+                functions.regexp_replace(functions.col("LIBGEO"), "�", "é")
+            ).withColumn("LIBGEO",
+                functions.regexp_replace(functions.col("LIBGEO"), "Ã©", "é")
+            ).withColumn("LIBGEO",
+                functions.regexp_replace(functions.col("LIBGEO"), "Ã¨", "è")
+            ).withColumn("LIBGEO",
+                functions.regexp_replace(functions.col("LIBGEO"), "Ãª", "ê")
+            ).withColumn("LIBGEO",
+                functions.regexp_replace(functions.col("LIBGEO"), "Ã ", "à")
+            ).withColumn("LIBGEO",
+                functions.regexp_replace(functions.col("LIBGEO"), "Ã´", "ô")
+            ).withColumn("LIBGEO",
+                functions.regexp_replace(functions.col("LIBGEO"), "Ã®", "î")
+            );
+
+
+
+
         // 6. Select the correct year column to avoid ambiguity before pivoting
         Dataset<Row> finalDF = yieldDF.select(
                 avgCityRenamed.col("LIBGEO").alias("LIBGEO"),
